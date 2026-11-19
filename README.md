@@ -1,9 +1,4 @@
-<img width="412" height="226" alt="3" src="https://github.com/user-attachments/assets/42216ecb-5847-4230-9939-ebf6edfac7a8" />
-<img width="618" height="705" alt="1" src="https://github.com/user-attachments/assets/efa49a88-2a00-49c4-841f-24db81ca6f2a" />
-<img width="617" height="703" alt="2" src="https://github.com/user-attachments/assets/61f0bd02-d8ca-4144-803a-4047107a6ee7" />
-
 # TexTurEng
-
 
 **AI dictation and Turkish ⇄ English translation for Windows.**
 
