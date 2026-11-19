@@ -159,8 +159,8 @@ The repository includes a `CLAUDE.md` with step-by-step instructions for
 
 | Action | Keys |
 | --- | --- |
-| Dictate | Hold `Ctrl+Win`, speak, release |
-| Dictate and translate | Hold `Ctrl+Win+Alt`, or press `Alt` while holding `Ctrl+Win`. The bar turns amber |
+| Dictate | Hold `Ctrl+Win`, speak, release. A red listening box appears in the middle of the screen; its waves follow your voice |
+| Dictate and translate | Hold `Ctrl+Win+Alt`, or press `Alt` while holding `Ctrl+Win`. The listening box turns orange |
 | Translate selected text | Select text in any app and press `Ctrl+C` twice quickly. A popup shows the translation, with **Copy** and **Replace selection** |
 | Hands-free | `Ctrl+Win+Space` to start, the same keys to stop |
 | Cancel | `Esc` while recording |
