@@ -1,0 +1,14 @@
+# Python environment and caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Build output (installers are published as GitHub release downloads instead)
+build/
+dist/
+
+# Local tool and working folders
+.claude/
+.remember/
+ds/
