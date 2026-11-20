@@ -92,6 +92,14 @@ from source:
 - On a PC without a GPU, `local_device` must not be `cuda` and `local_model`
   should be `small` (or `base`); `large-v3-turbo` on CPU is too slow.
 - If `cleanup_provider` is `ollama`, `ollama_model` must appear in `ollama list`.
+- AMD graphics (no NVIDIA card): speech recognition stays on the CPU (faster-whisper
+  needs NVIDIA), but Ollama can run cleanup on the AMD chip through Vulkan. Ollama
+  skips graphics built into the processor (e.g. Radeon 860M) unless the user
+  environment variable `OLLAMA_IGPU_ENABLE=1` is set; its `server.log` then says
+  "dropping integrated GPU". Ask the user before setting it, then restart Ollama
+  (tray > Quit, start again) and check that `ollama ps` shows `GPU`. Expect a modest
+  gain (measured `gemma3:4b` on a Radeon 860M: cleanup about 4.4 s -> 3.4 s); cloud
+  cleanup is still far faster (under 0.5 s). Remove the variable to undo it.
 - If the cloud cleanup model is rejected ("model not found" in the log or tray), ask
   the user to pick a current chat model on console.groq.com and enter its id in
   Settings > Cleanup > Cloud model (this sets `cloud_cleanup_model`).
