@@ -85,7 +85,8 @@ The translation features use the AI chosen in Settings → Cleanup (Ollama or cl
 - **For local AI cleanup and translation:** [Ollama](https://ollama.com).
 - **Optional:** a CUDA-compatible graphics card for fast local speech recognition
   (other graphics cards are not used; speech recognition then runs on the processor), or a free
-  [Groq API key](https://console.groq.com/keys) for the cloud options.
+  [Groq API key](https://console.groq.com/keys) for the cloud options (see
+  [Using the cloud option](#using-the-cloud-option-groq) below).
 
 ### Which setup suits your PC
 
@@ -110,8 +111,15 @@ git clone https://github.com/bulentbaslar/TexTurEng.git C:\Textureng
 cd C:\Textureng
 ```
 
-(Or download the ZIP from the green **Code** button on GitHub and extract it to
-`C:\Textureng`.)
+**Without Git:** on the GitHub page click the green **Code** button > **Download ZIP**.
+The ZIP contains one folder, `TexTurEng-main`. Extract it to `C:\`, then rename
+`C:\TexTurEng-main` to `C:\Textureng`, so that `setup.ps1` is directly inside
+`C:\Textureng` (not in `C:\Textureng\TexTurEng-main`). Then open PowerShell and run
+`cd C:\Textureng`.
+
+To update a ZIP install later, download a new ZIP and copy its files over
+`C:\Textureng`, replacing the old ones (keep the `.venv` folder), then run the setup
+script again.
 
 ### 2. Run the setup script
 
@@ -144,6 +152,47 @@ in the system tray.
 - **First start with a CUDA-compatible graphics card:** everything runs locally. The Whisper speech model
   (about 1.6 GB) downloads once on first start.
 
+### Using the cloud option (Groq)
+
+The cloud option is the fastest choice on a PC without a CUDA-compatible graphics card:
+a dictation takes about 1 second instead of several. It needs a free
+[Groq](https://groq.com) account and an API key (a password-like code that lets
+TexTurEng use Groq).
+
+**1. Get a Groq API key**
+
+1. Go to [console.groq.com](https://console.groq.com) and sign in (a Google account works).
+2. Open **API Keys** ([console.groq.com/keys](https://console.groq.com/keys)) and click
+   **Create API Key**. Give it any name, for example `TexTurEng`.
+3. Copy the key. It starts with `gsk_` and is shown **only once**; if you lose it,
+   delete it and create a new one.
+
+Keep the key private: don't post it anywhere or send it in a chat. The free plan has
+usage limits that are generous for personal dictation; see the Groq console for details.
+
+**2. Enter the key in TexTurEng**
+
+- **First start:** the setup window has a **Cloud API key** box. Choose **Cloud (fast)**
+  for speech recognition and/or cleanup, paste the key and click **Start**.
+- **Later:** right-click the tray icon > **Settings**:
+  - **Speech** tab: set **Engine** to **Cloud API** and paste the key into
+    **Cloud API key**. Leave **Cloud base URL** as `https://api.groq.com/openai/v1`
+    and **Cloud model** as `whisper-large-v3-turbo`.
+  - **Cleanup** tab: set **Run cleanup on** to **Cloud API**. **Cloud model** should be
+    `qwen/qwen3.8-27b`.
+  - Click **Save**.
+
+The key is stored in Windows Credential Manager, not in a file, and is used for both
+cloud speech recognition and cloud cleanup. Once saved, the **Cloud API key** box stays
+empty; leave it empty to keep the saved key, or paste a new one to replace it.
+
+You can mix and match: for example, cloud speech recognition with local Ollama cleanup.
+To check it works, dictate something and look at the last line of
+`%APPDATA%\Textureng\textureng.log`: `stt` and `cleanup` should each be under a second.
+
+**Other providers:** any OpenAI-compatible service works. Change **Cloud base URL**, both
+**Cloud model** boxes and the key to match it (for OpenAI: `https://api.openai.com/v1`).
+
 ### Installing with Claude Code
 
 The repository includes a `CLAUDE.md` with step-by-step instructions for
@@ -172,7 +221,7 @@ Right-click the tray icon for:
 - **General:** hotkeys, microphone, language (auto / English / Turkish), translation
   direction (the other language, always English, or always Turkish), start with Windows.
 - **Speech:** engine, local model, cloud address, model and API key.
-- **Cleanup:** on/off, local or cloud, Ollama model.
+- **Cleanup:** on/off, local or cloud, Ollama model, cloud model.
 - **Voice:** natural or Windows voice, the English and Turkish voice, speed,
   reading every translation aloud automatically, and the 🔊 button for selected text.
 - **App styles:** which programs count as email, chat, code or document, and how each
@@ -194,6 +243,9 @@ Spoken commands: "new line" / "yeni satır" and "new paragraph" / "yeni paragraf
 | Problem | What to do |
 | --- | --- |
 | Text is pasted with "um"s and a tray warning about Ollama | Start Ollama from the Start menu, and check the model in Settings > Cleanup is one that `ollama list` shows |
+| Tray warning "The cloud API key was rejected" | The key is wrong, deleted or expired. Create a new one at [console.groq.com/keys](https://console.groq.com/keys) and paste it in Settings > Speech > Cloud API key |
+| Tray warning "Cloud cleanup model … is not available" | The provider retired that model. In Settings > Cleanup > Cloud model, enter a current chat model from the Groq console's model list (`qwen/qwen3.8-27b` at the time of writing) |
+| Cloud base URL box in Settings is empty | Type `https://api.groq.com/openai/v1` back in before clicking Save, or click Cancel |
 | Nothing is transcribed | Pick the right microphone in Settings > General |
 | Dictation is slow | Check the timing in `%APPDATA%\Textureng\textureng.log` (`stt` = speech, `cleanup` = AI), then use a smaller model or the cloud option for the slow step |
 | Text doesn't appear in one program | That program probably runs as administrator; Windows doesn't allow pasting into it from a normal app |

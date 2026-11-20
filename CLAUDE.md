@@ -97,7 +97,10 @@ from source:
   skips graphics built into the processor (e.g. Radeon 860M) unless the user
   environment variable `OLLAMA_IGPU_ENABLE=1` is set; its `server.log` then says
   "dropping integrated GPU". Ask the user before setting it, then restart Ollama
-  (tray > Quit, start again) and check that `ollama ps` shows `GPU`. Expect a modest
+  (tray > Quit, start again from the Start menu) and check that `ollama ps` shows
+  `GPU` while a model is loaded (it lists nothing when no model is loaded). A
+  program started from a terminal opened before the variable was set does not see
+  it: an Ollama started that way runs on the CPU again. Expect a modest
   gain (measured `gemma3:4b` on a Radeon 860M: cleanup about 4.4 s -> 3.4 s); cloud
   cleanup is still far faster (under 0.5 s). Remove the variable to undo it.
 - If the cloud cleanup model is rejected ("model not found" in the log or tray), ask
