@@ -149,5 +149,22 @@ def copy_selection(timeout: float = 0.6) -> str:
     QCoreApplication.processEvents()
     text = clipboard.text().strip()
     if saved is not None:
-        clipboard.setMimeData(saved)
+        _restore_clipboard(saved)
     return text
+
+
+def _restore_clipboard(saved: QMimeData, attempts: int = 20) -> None:
+    """Put saved clipboard contents back. Right after a copy, Windows clipboard
+    history or a clipboard manager may hold the clipboard open, so setting it can
+    fail; check and retry for up to about two seconds."""
+    from PySide6.QtCore import QCoreApplication
+
+    clipboard = QGuiApplication.clipboard()
+    for _ in range(attempts):
+        clipboard.setMimeData(_copy_mime(saved))  # Qt takes ownership: give it a copy
+        QCoreApplication.processEvents()
+        current = clipboard.mimeData()
+        if current is not None and current.formats() and current.text() == saved.text():
+            return
+        time.sleep(0.1)
+    log.warning("could not restore the clipboard (another program kept it open)")
