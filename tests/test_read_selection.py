@@ -73,6 +73,36 @@ class FakeKeyboard:
         pass
 
 
+def put_on_clipboard(text):
+    """Put text on the real Windows clipboard. Another program (clipboard history,
+    cloud clipboard, a clipboard manager) may hold it open for a moment, so retry;
+    skip the test if it stays busy instead of failing the install."""
+    import time
+    from PySide6.QtCore import QCoreApplication
+
+    for _ in range(25):
+        QApplication.clipboard().setText(text)
+        QCoreApplication.processEvents()
+        if QApplication.clipboard().text() == text:
+            return
+        time.sleep(0.1)
+    pytest.skip("the Windows clipboard is busy (held by another program)")
+
+
+def clipboard_text_soon(expected, wait=2.0):
+    """Read the clipboard, giving a busy clipboard a moment to become readable."""
+    import time
+    from PySide6.QtCore import QCoreApplication
+
+    deadline = time.monotonic() + wait
+    while True:
+        QCoreApplication.processEvents()
+        text = QApplication.clipboard().text()
+        if text == expected or time.monotonic() > deadline:
+            return text
+        time.sleep(0.1)
+
+
 def install_fakes(monkeypatch, copies_text):
     import pynput.keyboard
 
@@ -88,17 +118,17 @@ def install_fakes(monkeypatch, copies_text):
 
 
 def test_copy_selection_returns_text_and_restores_clipboard(qapp, monkeypatch):
-    QApplication.clipboard().setText("what the user had copied before")
+    put_on_clipboard("what the user had copied before")
     install_fakes(monkeypatch, "  Merhaba dünya  ")
     assert selection.copy_selection(timeout=0.3) == "Merhaba dünya"
-    assert QApplication.clipboard().text() == "what the user had copied before"
+    assert clipboard_text_soon("what the user had copied before") == "what the user had copied before"
 
 
 def test_copy_selection_with_nothing_selected(qapp, monkeypatch):
-    QApplication.clipboard().setText("unchanged")
+    put_on_clipboard("unchanged")
     install_fakes(monkeypatch, None)
     assert selection.copy_selection(timeout=0.2) == ""
-    assert QApplication.clipboard().text() == "unchanged"
+    assert clipboard_text_soon("unchanged") == "unchanged"
 
 
 # ---- the floating button ------------------------------------------------------------
