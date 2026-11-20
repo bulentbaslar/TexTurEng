@@ -102,7 +102,7 @@ DEFAULTS: dict = {
     "cloud_model": "whisper-large-v3-turbo",
     "cleanup_enabled": True,
     "cleanup_provider": "ollama",  # ollama (local) | cloud (same endpoint and key as cloud speech)
-    "cloud_cleanup_model": "llama-3.3-70b-versatile",
+    "cloud_cleanup_model": "qwen/qwen3.8-27b",
     "ollama_url": "http://127.0.0.1:11434",  # not "localhost": its IPv6 lookup adds ~2 s per call on Windows
     "ollama_model": "gemma3:12b",
     "ollama_timeout": 20,
@@ -117,6 +117,11 @@ DEFAULTS: dict = {
     ],
     "profiles": DEFAULT_PROFILES,
 }
+
+
+# Cloud cleanup models the provider has retired; saved settings naming one get the
+# current default instead, so an update fixes "model not available" by itself.
+RETIRED_CLOUD_CLEANUP_MODELS = {"llama-3.3-70b-versatile"}
 
 
 def _merge(defaults: dict, saved: dict) -> dict:
@@ -142,6 +147,10 @@ class Config:
         try:
             saved = json.loads(self.path.read_text(encoding="utf-8"))
             self.data = _merge(DEFAULTS, saved)
+            if self.data.get("cloud_cleanup_model") in RETIRED_CLOUD_CLEANUP_MODELS:
+                log.info("cloud cleanup model %s is retired; using %s",
+                         self.data["cloud_cleanup_model"], DEFAULTS["cloud_cleanup_model"])
+                self.data["cloud_cleanup_model"] = DEFAULTS["cloud_cleanup_model"]
         except (OSError, ValueError) as exc:
             log.warning("Could not read %s (%s); using defaults", self.path, exc)
 
