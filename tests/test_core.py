@@ -220,6 +220,16 @@ def test_config_persists_and_merges_new_defaults(tmp_path):
     assert Config(path)["language"] == "tr"
 
 
+def test_retired_cloud_cleanup_model_is_replaced(tmp_path):
+    from textureng.config import DEFAULTS
+
+    path = tmp_path / "config.json"
+    path.write_text('{"cloud_cleanup_model": "llama-3.3-70b-versatile"}', encoding="utf-8")
+    assert Config(path)["cloud_cleanup_model"] == DEFAULTS["cloud_cleanup_model"]
+    path.write_text('{"cloud_cleanup_model": "my/own-model"}', encoding="utf-8")
+    assert Config(path)["cloud_cleanup_model"] == "my/own-model"   # a user's own choice is kept
+
+
 def test_history(tmp_path):
     history = History(tmp_path / "h.db")
     history.add("slack.exe", "chat", "en", "um hi", "Hi")
