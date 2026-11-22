@@ -286,7 +286,8 @@ def polish(transcript: str, profile: dict, language: str, cfg, target: str = "")
         return failed(str(exc))
     text = tidy_output(output, raw)
     if is_suspicious(text, raw, factor=2.0 if translating else 1.5):
-        log.warning("Suspicious cleanup output discarded: %r", output[:200])
+        # Only lengths: the log must not contain dictated text (see SECURITY.md).
+        log.warning("Suspicious cleanup output discarded (%d chars for %d chars of input)", len(output), len(raw))
         return failed(f"{service} looked wrong")
     return CleanupResult(text, used_llm=True)
 
