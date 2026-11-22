@@ -8,6 +8,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 
+import numpy as np
 from PySide6.QtCore import QObject, Signal, Slot
 
 from . import cleanup
@@ -40,13 +41,41 @@ def translation_target(cfg, spoken: str) -> str:
     return "tr" if spoken == "en" else "en"
 
 
+# What Whisper tends to "hear" in silence or very faint audio.
+SILENCE_PHRASES = {
+    "thank you", "thank you.", "thank you!", "thanks for watching", "thanks for watching!",
+    "you", "bye.", "we'll be right back.", "we'll be right back", "i'll see you next time.",
+    "teşekkürler.", "teşekkürler", "teşekkür ederim.", "altyazı m.k.",
+    "abone olmayı unutmayın.",
+}
+QUIET_PEAK = 0.02   # loudest sample of a recording below this = the microphone hardly heard anything
+MIC_TOO_QUIET = (
+    "The microphone hardly picked up any sound. Check that the right microphone is chosen "
+    "in Settings > General and that its volume in Windows sound settings is not too low."
+)
+
+
+def audio_levels(audio) -> tuple[float, float]:
+    """(peak, rms) of a recording, 0..1."""
+    if not len(audio):
+        return 0.0, 0.0
+    return float(np.max(np.abs(audio))), float(np.sqrt(np.mean(np.square(audio))))
+
+
 def run_pipeline(
     audio, app: AppInfo, cfg, transcriber, profile_key: str | None = None, translate: bool = False
 ) -> Result:
     t0 = time.perf_counter()
+    peak, rms = audio_levels(audio)
     transcript = transcriber.transcribe(
         audio, language=cfg["language"], candidates=list(cfg["languages"]), terms=list(cfg["dictionary"])
     )
+    quiet_warning = ""
+    if peak < QUIET_PEAK and transcript.text.strip().lower() in SILENCE_PHRASES:
+        transcript = type(transcript)("", transcript.language)  # don't paste "Thank you." for silence
+        quiet_warning = MIC_TOO_QUIET
+    elif peak < QUIET_PEAK and not transcript.text.strip():
+        quiet_warning = MIC_TOO_QUIET
     t1 = time.perf_counter()
     key = profile_key or resolve_profile(app, cfg["profiles"], cfg["browsers"])
     profile = cfg["profiles"].get(key) or cfg["profiles"]["default"]
@@ -56,13 +85,15 @@ def run_pipeline(
     translated = target if (polished.used_llm and target and target != transcript.language) else ""
     result = Result(
         text=polished.text, raw=transcript.text, language=transcript.language, profile=key, app=app,
-        warning=polished.warning, used_llm=polished.used_llm, stt_seconds=t1 - t0, cleanup_seconds=t2 - t1,
-        translated_to=translated,
+        warning=polished.warning or quiet_warning, used_llm=polished.used_llm, stt_seconds=t1 - t0,
+        cleanup_seconds=t2 - t1, translated_to=translated,
     )
     log.info(
-        "audio %.1fs | stt %.2fs | cleanup %.2fs | lang=%s%s profile=%s app=%s",
-        len(audio) / SAMPLE_RATE, result.stt_seconds, result.cleanup_seconds,
+        "audio %.1fs (mic peak %.3f, rms %.4f) | stt %.2fs | cleanup %.2fs | lang=%s%s profile=%s app=%s%s%s",
+        len(audio) / SAMPLE_RATE, peak, rms, result.stt_seconds, result.cleanup_seconds,
         result.language, f"->{translated}" if translated else "", key, app.process,
+        "" if transcript.text.strip() else " | nothing was heard",
+        f" | {result.warning}" if result.warning else "",
     )
     return result
 

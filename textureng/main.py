@@ -37,6 +37,7 @@ def setup_logging() -> None:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
         handlers=[handler] + ([logging.StreamHandler()] if sys.stderr else []),
+        force=True,  # a library may have set up logging first (seen when started with Windows)
     )
     for noisy in ("httpx", "httpx2", "huggingface_hub", "faster_whisper"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
@@ -244,6 +245,8 @@ class Controller(QObject):
         self.busy = False
         self.overlay.dismiss()
         if not result.text:
+            if result.warning:
+                self.tray.warn(result.warning)
             return
         method = "type" if result.app.process in self.cfg["type_apps"] else self.cfg["inject_method"]
         text = result.text + (" " if self.cfg["append_space"] else "")
