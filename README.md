@@ -251,6 +251,45 @@ Spoken commands: "new line" / "yeni satır" and "new paragraph" / "yeni paragraf
 | Text doesn't appear in one program | That program probably runs as administrator; Windows doesn't allow pasting into it from a normal app |
 | `ctrl+win` clashes with another tool | Change the hotkeys in Settings > General |
 
+## Uninstalling
+
+### Installed from source (Git or ZIP)
+
+Open PowerShell in the TexTurEng folder (for example `cd C:\Textureng`) and run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File uninstall.ps1
+```
+
+It first lists everything it will remove and asks you to type `YES`. It removes:
+
+- the program folder (including its `.venv`) and the **TexTurEng** desktop shortcut;
+- the "Start with Windows" entry, and closes TexTurEng if it is running;
+- settings, history, the log and the read-aloud voices (`%APPDATA%\Textureng`);
+- the saved cloud API key in Windows Credential Manager;
+- the downloaded Whisper speech model (about 1.6 GB).
+
+Options: add `-WhatIf` to only see the list without removing anything, `-KeepSettings`
+to keep your settings and history (useful before a fresh reinstall), or
+`-KeepSpeechModel` to keep the speech model. The script refuses to run from a folder
+that is not TexTurEng. It ends with `UNINSTALL OK`.
+
+### Installed with the installer
+
+Windows Settings → Apps → Installed apps → **TexTurEng** → **Uninstall**. This removes
+the program, its shortcuts and its "Start with Windows" entry. To remove everything
+else as well, delete the folder `%APPDATA%\Textureng` (paste it into File Explorer's
+address bar), the **Textureng** entry in Control Panel → Credential Manager → Windows
+Credentials, and the `models--…faster-whisper…` folder in
+`%USERPROFILE%\.cache\huggingface\hub`.
+
+### Not removed
+
+Ollama, its models and Python are separate programs that other software may use.
+Remove them yourself if you no longer need them: Ollama and Python under Windows
+Settings → Apps (Ollama's models are in `%USERPROFILE%\.ollama`), or remove just one
+model with `ollama rm gemma3:12b`.
+
 ## For developers
 
 ```powershell

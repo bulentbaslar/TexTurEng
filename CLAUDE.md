@@ -56,6 +56,14 @@ from source:
 3. Run `setup.ps1` again (it reuses `.venv`, installs any new packages, runs the
    tests and the self-test), then start the app and check the log.
 
+## If you are asked to uninstall
+
+Run `uninstall.ps1 -WhatIf` first and show the user the list it prints. Only after the
+user confirms, run it for real (it asks the user to type `YES`; pass `-Yes` only when
+the user has already confirmed in chat). It removes the program folder, desktop
+shortcut, startup entry, `%APPDATA%\Textureng`, the Credential Manager key and the
+Whisper model, and leaves Ollama and Python alone. Use `-KeepSettings` for a reinstall.
+
 ## Checking the settings
 
 - Settings file: `%APPDATA%\Textureng\config.json`. Keys that matter:
