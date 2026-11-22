@@ -1,7 +1,7 @@
 ﻿; Inno Setup script for the laptop (CPU / cloud) build of TexTurEng.
 ; Installs per user, so no administrator rights are needed.
 #define AppName "TexTurEng"
-#define AppVersion "0.5.2"
+#define AppVersion "0.5.3"
 
 [Setup]
 AppId={{6F70E6DE-6C28-4F61-9FCB-6F718D252C11}
