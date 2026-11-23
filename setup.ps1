@@ -77,5 +77,26 @@ try {
     Write-Host "Ollama models: $(($tags.models | ForEach-Object { $_.name }) -join ', ')"
 } catch { Write-Host "Ollama: not running (only needed for local cleanup)" }
 
+# How to start it: the typed command differs between the Command Prompt and PowerShell
+# (in the Command Prompt the quotes are needed: without them "start" is read as
+# Windows' own START command).
+$parentId = (Get-CimInstance Win32_Process -Filter "ProcessId=$PID" -ErrorAction SilentlyContinue).ParentProcessId
+$parentName = (Get-Process -Id $parentId -ErrorAction SilentlyContinue).ProcessName
+$cmdLine = '"Start Textureng.bat"'
+$psLine = '& ".\Start Textureng.bat"'
 Write-Host ""
-Write-Host "SETUP OK. Start the app with the desktop shortcut or 'Start Textureng.bat'." -ForegroundColor Green
+Write-Host "SETUP OK." -ForegroundColor Green
+Write-Host ""
+Write-Host "To start TexTurEng:"
+if (-not $NoShortcut) { Write-Host "  - double-click the TexTurEng shortcut on your desktop, or" }
+if ($parentName -eq "cmd") {
+    Write-Host "  - type this in this window, exactly as shown (with the quotes), and press Enter:"
+    Write-Host "      $cmdLine" -ForegroundColor Yellow
+} elseif ($parentName -in "powershell", "pwsh") {
+    Write-Host "  - type this in this window, exactly as shown, and press Enter:"
+    Write-Host "      $psLine" -ForegroundColor Yellow
+} else {
+    Write-Host "  - in a Command Prompt in $root type (with the quotes):  $cmdLine"
+    Write-Host "  - in PowerShell in $root type:  $psLine"
+}
+Write-Host "TexTurEng then appears as a microphone icon in the system tray (bottom right)."

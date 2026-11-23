@@ -143,8 +143,14 @@ Windows and runs in the background. Skip this step if you will use the cloud opt
 
 ### 4. Start TexTurEng
 
-Double-click the desktop shortcut (or `Start Textureng.bat`). A microphone icon appears
-in the system tray.
+Double-click the **TexTurEng** shortcut on your desktop. Or start it by typing, in the
+`C:\Textureng` folder, exactly as shown and then pressing Enter:
+
+- in the **Command Prompt** (with the quotes; without them Windows reads "start" as its
+  own command): `"Start Textureng.bat"`
+- in **PowerShell**: `& ".\Start Textureng.bat"`
+
+A microphone icon appears in the system tray (bottom right of the screen).
 
 - **First start on a PC without a CUDA-compatible graphics card:** a setup window asks whether speech
   recognition and cleanup should run in the cloud or on the PC, and for an API key if
