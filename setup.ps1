@@ -36,15 +36,23 @@ $hasGpu = $false
 if (-not $Laptop) { try { nvidia-smi -L *> $null; $hasGpu = ($LASTEXITCODE -eq 0) } catch { } }
 $requirements = if ($hasGpu) { "requirements.txt" } else { "requirements-laptop.txt" }
 Write-Host "GPU: $hasGpu -> installing $requirements"
+Write-Host ""
+Write-Host "Installing packages, this can take 5-15 minutes..." -ForegroundColor Cyan
+Write-Host "(several hundred MB are downloaded; the lines below show the progress. Please keep this window open.)"
+Write-Host ""
 & $py -m pip install --upgrade pip -q
-& $py -m pip install -r "$root\$requirements" -q
+& $py -m pip install -r "$root\$requirements" --progress-bar on --disable-pip-version-check
 if ($LASTEXITCODE -ne 0) { Write-Host "STEP FAILED: pip install"; exit 1 }
+Write-Host ""
+Write-Host "Packages installed." -ForegroundColor Cyan
 
 # 4. Unit tests
+Write-Host "Running the tests (under a minute)..." -ForegroundColor Cyan
 & $py -m pytest "$root\tests" -q
 if ($LASTEXITCODE -ne 0) { Write-Host "STEP FAILED: unit tests"; exit 1 }
 
 # 5. Self-test (microphones, key storage, hotkeys, UI, cloud reachability)
+Write-Host "Checking microphone, voices and settings..." -ForegroundColor Cyan
 $report = Join-Path $env:TEMP "textureng-selftest.json"
 & $py -m textureng --selftest $report
 Get-Content $report
@@ -69,4 +77,5 @@ try {
     Write-Host "Ollama models: $(($tags.models | ForEach-Object { $_.name }) -join ', ')"
 } catch { Write-Host "Ollama: not running (only needed for local cleanup)" }
 
-Write-Host "SETUP OK. Start the app with the desktop shortcut or 'Start Textureng.bat'."
+Write-Host ""
+Write-Host "SETUP OK. Start the app with the desktop shortcut or 'Start Textureng.bat'." -ForegroundColor Green
