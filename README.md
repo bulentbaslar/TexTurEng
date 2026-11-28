@@ -1,4 +1,4 @@
-# TexTurEng
+# TexTurEng 0.6.0
 
 **AI dictation and Turkish ⇄ English translation for Windows.**
 
