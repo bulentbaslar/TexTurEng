@@ -89,6 +89,29 @@ Whisper model, and leaves Ollama and Python alone. Use `-KeepSettings` for a rei
   a drag or double-click shows `ui/speak_bubble.py`; clicking it presses Ctrl+C, reads
   the text with `tts.Speaker` and restores the clipboard). The log shows
   `reading selection aloud`.
+- Audio files to .txt/.srt: tray > Transcribe audio files… (`ui/transcribe_window.py`,
+  logic in `transcribe_file.py`). Files are decoded with PyAV via
+  `faster_whisper.decode_audio`; speech is found with faster-whisper's VAD and grouped
+  into chunks of up to 25 s; with language Auto each chunk gets the better of en/tr
+  (`LocalTranscriber.pick_language`) and is transcribed with `transcribe_chunk` (the
+  model is shared with dictation through a lock, so they take turns per chunk). Cloud
+  engine: chunks of up to 10 min via `CloudTranscriber.transcribe_timed`. Config keys
+  `transcribe_language`, `transcribe_srt`. The log says `file transcribed (.m4a, …)`
+  without file names or text. The self-test's `media_decoding` proves .m4a decoding.
+- Text to audio file: tray > Text to audio file… (`ui/speech_window.py`, logic in
+  `text_to_audio.py`). Text is split into sentences; each gets en or tr via
+  `cleanup.looks_turkish` (sentences under 3 words follow their paragraph) and is read
+  by `tts.make_synthesizer` (natural voice or Windows voice, shared with the 🔊 speaker),
+  resampled to 22.05 kHz, with pauses, and saved with PyAV as mp3/m4a or as wav. Config
+  key `speech_format`. The log says `speech file created (.mp3, …)` without text. The
+  self-test's `media_decoding` also proves mp3 saving.
+- Voice-over from .srt (third tab): `text_to_audio.parse_srt` / `voice_over` /
+  `create_voice_over_file`. Each cue is spoken at its start (`line_language` picks
+  en/tr; short lines use common short words, else follow the previous line); a line
+  longer than the gap to the next cue is re-read up to `MAX_SPEEDUP` (1.3x) faster, and
+  if it still does not fit the following cues start later (never overlap) and are
+  reported as late. Output `name voice-over.mp3` next to the .srt. Log line
+  `voice-over created (.mp3, …)`.
 - Translation reuses the cleanup model (Ollama or cloud) and runs even when cleanup
   is off. Translated dictations log `lang=tr->en` and show "TR → EN" in History.
   Test it without a microphone: add `--translate auto` to the pipeline test below.
@@ -126,9 +149,10 @@ Whisper model, and leaves Ollama and Python alone. Use `-KeepSettings` for a rei
   `stt/local.py` (faster-whisper), `stt/cloud.py` (OpenAI-compatible, Groq default),
   `context.py` (foreground app -> profile), `cleanup.py` (Ollama or cloud chat, prompt,
   fallbacks), `inject.py` (clipboard paste + restore), `pipeline.py`, `history.py`,
-  `tts.py` (read-aloud voices), `selection.py` (selection gestures, copying the selection).
+  `tts.py` (read-aloud voices), `selection.py` (selection gestures, copying the selection),
+  `transcribe_file.py` (audio files to .txt/.srt), `text_to_audio.py` (text to mp3/m4a/wav).
 - `ui/`: `overlay.py`, `tray.py`, `settings.py`, `welcome.py` (first run), `history_window.py`,
-  `translation_popup.py`, `speak_bubble.py`.
+  `translation_popup.py`, `speak_bubble.py`, `transcribe_window.py`, `speech_window.py`.
 - `tests/`: `python -m pytest tests -q` (no network, no microphone needed).
 - `installer/build.ps1`: PyInstaller + Inno Setup build of `dist\Textureng-Setup.exe`.
 

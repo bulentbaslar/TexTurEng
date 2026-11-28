@@ -20,7 +20,10 @@ from .inject import Injector
 from .pipeline import PipelineWorker, Result
 from .selection import SelectionWatcher, copy_selection
 from .tts import Speaker
+from .stt import make_transcriber
 from .ui.speak_bubble import SpeakBubble
+from .ui.speech_window import SpeechWindow
+from .ui.transcribe_window import TranscribeWindow
 from .ui.history_window import HistoryWindow
 from .ui.overlay import Overlay
 from .ui.settings import SettingsWindow
@@ -90,6 +93,8 @@ class Controller(QObject):
         self.tray.pauseToggled.connect(self.set_paused)
         self.tray.settingsRequested.connect(self.open_settings)
         self.tray.historyRequested.connect(self.open_history)
+        self.tray.transcribeRequested.connect(self.open_transcribe)
+        self.tray.speechRequested.connect(self.open_speech)
         self.tray.quitRequested.connect(self.quit)
         self.tray.show()
 
@@ -321,6 +326,32 @@ class Controller(QObject):
     def open_history(self) -> None:
         self._show("history", HistoryWindow(self.history))
 
+    def open_transcribe(self) -> None:
+        window = self._windows.get("transcribe")
+        if window is None:  # one window, kept: it may still be working while hidden
+            window = TranscribeWindow(self.cfg, self._file_transcriber)
+            self._windows["transcribe"] = window
+        window.show()
+        window.raise_()
+        window.activateWindow()
+
+    def open_speech(self) -> None:
+        window = self._windows.get("speech")
+        if window is None:  # one window, kept: it may still be working while hidden
+            window = SpeechWindow(self.cfg)
+            self._windows["speech"] = window
+        window.show()
+        window.raise_()
+        window.activateWindow()
+
+    def _file_transcriber(self):
+        """The speech engine for file jobs: the one dictation uses, loaded if needed."""
+        transcriber = self.worker.transcriber
+        if transcriber is None:
+            transcriber = make_transcriber(self.cfg)
+            transcriber.load()
+        return transcriber
+
     def _show(self, name: str, window) -> None:
         old = self._windows.get(name)
         if old is not None:
@@ -331,6 +362,10 @@ class Controller(QObject):
         window.activateWindow()
 
     def quit(self) -> None:
+        for name in ("transcribe", "speech"):
+            window = self._windows.get(name)
+            if window is not None:
+                window.shutdown()
         self.speaker.stop()
         self.watcher.stop()
         self.hotkeys.stop()

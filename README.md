@@ -220,6 +220,8 @@ Right-click the tray icon for:
 - **Speech engine:** local or cloud.
 - **Cleanup:** local (Ollama), cloud or off.
 - **Translate mode:** translate every dictation without holding `Alt`.
+- **Transcribe audio files…:** turn recordings into text and subtitles (see below).
+- **Text to audio file…:** turn text into a spoken MP3, M4A or WAV file (see below).
 - **Pause, History, Settings, About.**
 
 **Settings** (all changeable at any time):
@@ -235,6 +237,69 @@ Right-click the tray icon for:
 - **Dictionary:** names and terms to spell exactly.
 
 Spoken commands: "new line" / "yeni satır" and "new paragraph" / "yeni paragraf".
+
+### Transcribing audio files
+
+Turn existing recordings (voice memos, meetings, interviews, videos) into text:
+
+1. Tray icon → **Transcribe audio files…**
+2. Click **Add files…** or drag files onto the window. Most audio and video formats
+   work: `.m4a`, `.mp3`, `.wav`, `.aac`, `.ogg`, `.opus`, `.flac`, `.wma`, `.amr`, `.mp4`,
+   `.mov`, `.mkv`, `.webm` and more. No extra converter is needed.
+3. Choose the language and click **Start**:
+   - **Auto** (recommended) handles Turkish, English, or both mixed in one recording:
+     each part of the recording gets its own language.
+   - **Turkish only** or **English only** if the whole recording is in one language.
+     Don't use "English only" for a Turkish recording; the result is nonsense.
+
+Next to each recording you get:
+
+- `name.txt`: exactly what was said, with a new paragraph after each longer pause.
+- `name.srt`: subtitles with timings (untick **Also create .srt subtitles** to skip it),
+  usable in VLC, YouTube, video editors and similar.
+
+Existing files are never overwritten (`name (2).txt` is used instead), and nothing is
+written if a file fails or you click **Cancel**. Files are done one after another; you
+can close the window and keep dictating while it works, and the tray menu brings the
+window back.
+
+**Speed:** with a CUDA-compatible graphics card, about 25 seconds per 10 minutes of audio.
+On the processor it is much slower (roughly the length of the recording or more). The
+cloud option is fast too, but it detects one language per 10 minutes, so recordings that
+switch between Turkish and English are more precise with local speech recognition.
+
+### Text to audio file
+
+The reverse direction: turn text into speech saved as an audio file.
+
+1. Tray icon → **Text to audio file…**
+2. Either type or paste text in the **Type or paste** tab, add `.txt` files in the
+   **Text files** tab, or add `.srt` subtitles in the **Subtitles (.srt)** tab (buttons or
+   drag and drop). Each text file becomes an audio file with
+   the same name next to it; for pasted text you choose where to save.
+3. Choose the format: **MP3** (plays everywhere), **M4A** (smaller) or **WAV**
+   (uncompressed), and the speed. Click **🔊 Listen** to hear the first sentences first.
+4. Click **Create audio file**.
+
+Turkish and English sentences are each read in their own voice, so mixed texts work.
+Short pauses go between sentences and longer ones between paragraphs. The voices are the
+ones chosen in Settings → Voice: the natural offline voices when installed from source
+(a page of text takes a few seconds), otherwise the voices built into Windows.
+Existing files are never overwritten, and nothing is written when you cancel.
+
+**Voice-over from subtitles (.srt):** in the **Subtitles (.srt)** tab, add `.srt`
+files (for example the ones made by *Transcribe audio files*). Each subtitle line is
+spoken at its own time, giving an audio track as long as the subtitles, saved next to
+them as `name voice-over.mp3`. Add it to the video in a video editor (Clipchamp,
+CapCut, DaVinci Resolve…), starting at 0:00. A line that is too long for its time is
+read up to 30 % faster; if it still does not fit, the next lines start a little later
+instead of overlapping, and the result lists which lines were late, so you can shorten
+them in the .srt and create it again.
+
+**Licences of the voices:** if you publish or sell the audio, use voices whose
+recordings allow it. The English voice LJ (public domain) and the Turkish voice Fettah
+(CC0) can be used for anything; DFKI is non-commercial only, and Fahrettin's licence is
+not published. The window shows a reminder when such a voice is selected.
 
 ## Privacy
 

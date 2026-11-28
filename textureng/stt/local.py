@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 from pathlib import Path
 
 import numpy as np
@@ -38,6 +39,8 @@ class LocalTranscriber:
         self.name = f"local:{model_name}"
         self.model = None
         self.active_device = ""
+        # Dictation and file transcription share one model; they take turns per chunk.
+        self._lock = threading.RLock()
 
     def load(self) -> None:
         if self.model is not None:
@@ -78,16 +81,39 @@ class LocalTranscriber:
 
     def transcribe(self, audio, language="auto", candidates=None, terms=None) -> Transcript:
         self.load()
-        lang = None if language == "auto" else language
-        if lang is None and candidates:
-            lang = candidates[0] if len(candidates) == 1 else self._pick_language(audio, candidates)
-        segments, info = self.model.transcribe(
-            audio,
-            language=lang,
-            beam_size=5,
-            vad_filter=True,
-            condition_on_previous_text=False,
-            initial_prompt=", ".join(terms) if terms else None,
-        )
-        text = " ".join(seg.text.strip() for seg in segments).strip()
+        with self._lock:
+            lang = None if language == "auto" else language
+            if lang is None and candidates:
+                lang = candidates[0] if len(candidates) == 1 else self._pick_language(audio, candidates)
+            segments, info = self.model.transcribe(
+                audio,
+                language=lang,
+                beam_size=5,
+                vad_filter=True,
+                condition_on_previous_text=False,
+                initial_prompt=", ".join(terms) if terms else None,
+            )
+            text = " ".join(seg.text.strip() for seg in segments).strip()
         return Transcript(text=text, language=lang or getattr(info, "language", "") or "")
+
+    # ---- used by file transcription (transcribe_file.py) -------------------------
+    def pick_language(self, audio: np.ndarray, candidates: list[str]) -> str:
+        """The most likely of the candidate languages for this audio."""
+        self.load()
+        with self._lock:
+            return self._pick_language(audio, candidates) or candidates[0]
+
+    def transcribe_chunk(self, audio: np.ndarray, language: str, terms=None) -> list[tuple[float, float, str]]:
+        """(start, end, text) of each segment of one speech chunk of up to ~30 s,
+        times relative to the chunk."""
+        self.load()
+        with self._lock:
+            segments, _ = self.model.transcribe(
+                audio,
+                language=language,
+                beam_size=5,
+                vad_filter=False,               # the chunk is already speech
+                condition_on_previous_text=False,
+                initial_prompt=", ".join(terms) if terms else None,
+            )
+            return [(s.start, s.end, s.text.strip()) for s in segments if s.text.strip()]

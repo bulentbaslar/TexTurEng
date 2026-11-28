@@ -94,6 +94,40 @@ def selftest(out_path: str) -> int:
     check("vad_assets", vad_assets)
     check("pynput", lambda: bool(__import__("pynput.keyboard", fromlist=["x"]).Listener))
     check("cloud_reachable_status", tls)
+    def media_decoding():
+        """Write a 1-second .m4a with PyAV and read it back like a user's recording."""
+        import os
+        import tempfile
+
+        import av
+        import numpy as np
+
+        from .transcribe_file import load_media
+
+        path = os.path.join(tempfile.mkdtemp(), "selftest.m4a")
+        container = av.open(path, "w")
+        stream = container.add_stream("aac", rate=16000)
+        stream.layout = "mono"
+        tone = (np.sin(np.linspace(0, 2000, 16000)) * 8000).astype(np.int16).reshape(1, -1)
+        frame = av.AudioFrame.from_ndarray(tone, format="s16", layout="mono")
+        frame.rate = 16000
+        for packet in list(stream.encode(frame)) + list(stream.encode(None)):
+            container.mux(packet)
+        container.close()
+        seconds = len(load_media(path)) / 16000
+        os.remove(path)
+        # MP3 saving, used by Text to audio file
+        from pathlib import Path
+
+        from .text_to_audio import write_audio
+
+        mp3 = Path(tempfile.mkdtemp()) / "selftest.mp3"
+        write_audio(np.sin(np.linspace(0, 2000, 22050)).astype(np.float32) * 0.3, mp3, "mp3")
+        mp3_seconds = len(load_media(mp3)) / 16000
+        mp3.unlink()
+        return f"m4a ok ({seconds:.1f}s), mp3 ok ({mp3_seconds:.1f}s)"
+
+    check("media_decoding", media_decoding)
     check("read_aloud", lambda: {
         "natural_voices": __import__("textureng.tts", fromlist=["x"]).neural_available(),
         "windows_voice_languages": sorted(__import__("textureng.tts", fromlist=["x"]).WindowsEngine.available_languages()),

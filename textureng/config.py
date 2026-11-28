@@ -90,8 +90,11 @@ DEFAULTS: dict = {
     "tts_voice_en": "en_US-ljspeech-medium",
     "tts_voice_tr": "tr_TR-fahrettin-medium",
     "tts_speed": 1.0,
-    "tts_auto_read": False,
-    "read_selection_button": True,  # show a 🔊 button after selecting text anywhere       # read each popup translation aloud automatically
+    "tts_auto_read": False,       # read each popup translation aloud automatically
+    "read_selection_button": True,  # show a 🔊 button after selecting text anywhere
+    "transcribe_language": "auto",  # audio files: auto (Turkish/English, mixed) | tr | en
+    "transcribe_srt": True,         # audio files: also write .srt subtitles
+    "speech_format": "mp3",         # text to audio file: mp3 | m4a | wav
     "mic_device": "",            # device name; empty = system default
     "language": "auto",          # auto | en | tr
     "languages": ["en", "tr"],   # candidates when language is "auto"

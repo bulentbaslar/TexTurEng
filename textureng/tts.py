@@ -235,6 +235,40 @@ class WindowsEngine:
         return wav_to_samples(asyncio.run(run()))
 
 
+# ---- choosing the voice for a language ------------------------------------------------
+def engine_for(cfg, lang: str) -> str:
+    """"neural" or "windows", following the setting and what is installed."""
+    choice = cfg.get("tts_engine", "auto")
+    if choice == "windows" or not neural_available() or not voice_for(cfg, lang):
+        return "windows"
+    return "neural"
+
+
+def make_synthesizer(cfg, lang: str, neural: NeuralEngine, windows: WindowsEngine,
+                     status=None, stop: threading.Event | None = None, speed: float | None = None):
+    """A function text -> (samples, rate) for one language: the natural voice (downloaded
+    once if needed) when available, otherwise the Windows voice. status(msg) reports
+    downloads; "" clears the message."""
+    status = status or (lambda message: None)
+    speed = float(cfg.get("tts_speed", 1.0) if speed is None else speed)
+    if engine_for(cfg, lang) == "neural":
+        voice_id = voice_for(cfg, lang)
+        try:
+            if not is_downloaded(voice_id):
+                name = LANGUAGE_NAMES.get(lang, lang)
+                status(f"Downloading the {name} voice (one time only)…")
+                download_voice(voice_id, lambda f: status(f"Downloading the {name} voice… {int(f * 100)}%"))
+                status("")
+            neural._load(voice_id)
+            return lambda piece: neural.synthesize(piece, voice_id, speed)
+        except Exception as exc:
+            if stop is not None and stop.is_set():
+                raise
+            log.warning("Natural voice unavailable (%s); using the Windows voice", exc)
+            status("")
+    return lambda piece: windows.synthesize(piece, lang, speed)
+
+
 # ---- the speaker used by the app ----------------------------------------------------
 def _play(samples: np.ndarray, rate: int, stop: threading.Event) -> None:
     import sounddevice as sd
@@ -281,33 +315,10 @@ class Speaker(QObject):
         self._stop.set()
 
     def engine_for(self, lang: str) -> str:
-        """"neural" or "windows", following the setting and what is installed."""
-        choice = self.cfg.get("tts_engine", "auto")
-        if choice == "windows" or not neural_available() or not voice_for(self.cfg, lang):
-            return "windows"
-        return "neural"
+        return engine_for(self.cfg, lang)
 
     def _synthesizer(self, lang: str, stop: threading.Event):
-        speed = float(self.cfg.get("tts_speed", 1.0))
-        if self.engine_for(lang) == "neural":
-            voice_id = voice_for(self.cfg, lang)
-            try:
-                if not is_downloaded(voice_id):
-                    name = LANGUAGE_NAMES.get(lang, lang)
-                    self.status.emit(f"Downloading the {name} voice (one time only)…")
-                    download_voice(
-                        voice_id,
-                        lambda f: self.status.emit(f"Downloading the {name} voice… {int(f * 100)}%"),
-                    )
-                    self.status.emit("")
-                self.neural._load(voice_id)
-                return lambda piece: self.neural.synthesize(piece, voice_id, speed)
-            except Exception as exc:
-                if stop.is_set():
-                    raise
-                log.warning("Natural voice unavailable (%s); using the Windows voice", exc)
-                self.status.emit("")
-        return lambda piece: self.windows.synthesize(piece, lang, speed)
+        return make_synthesizer(self.cfg, lang, self.neural, self.windows, self.status.emit, stop)
 
     def _run(self, text: str, lang: str, stop: threading.Event) -> None:
         self.started.emit()

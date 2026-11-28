@@ -66,3 +66,31 @@ class CloudTranscriber:
         body = response.json()
         lang = str(body.get("language") or data.get("language") or "").lower()
         return Transcript(text=str(body.get("text", "")).strip(), language=_LANG_NAMES.get(lang, lang))
+
+    def transcribe_timed(self, audio, language="auto", terms=None) -> tuple[list[tuple[float, float, str]], str]:
+        """For file transcription: segments (start, end, text) of up to ~10 minutes of
+        audio, times relative to the audio, and the language the service detected."""
+        if not self._key:
+            self.load()
+        data = {"model": self.model, "response_format": "verbose_json"}
+        if language != "auto":
+            data["language"] = language
+        if terms:
+            data["prompt"] = ", ".join(terms)
+        response = httpx.post(
+            f"{self.base_url}/audio/transcriptions",
+            headers={"Authorization": f"Bearer {self._key}"},
+            data=data,
+            files={"file": ("speech.wav", to_wav_bytes(audio), "audio/wav")},
+            timeout=180,
+        )
+        response.raise_for_status()
+        body = response.json()
+        lang = str(body.get("language") or data.get("language") or "").lower()
+        segments = [
+            (float(s.get("start", 0.0)), float(s.get("end", 0.0)), str(s.get("text", "")).strip())
+            for s in body.get("segments") or []
+        ]
+        if not segments and str(body.get("text", "")).strip():
+            segments = [(0.0, len(audio) / 16000, str(body["text"]).strip())]
+        return [s for s in segments if s[2]], _LANG_NAMES.get(lang, lang)

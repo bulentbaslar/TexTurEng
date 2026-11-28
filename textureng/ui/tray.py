@@ -60,6 +60,8 @@ class Tray(QSystemTrayIcon):
     pauseToggled = Signal(bool)
     settingsRequested = Signal()
     historyRequested = Signal()
+    transcribeRequested = Signal()
+    speechRequested = Signal()
     quitRequested = Signal()
 
     def __init__(self, cfg):
@@ -102,6 +104,8 @@ class Tray(QSystemTrayIcon):
         self.pause_action.setCheckable(True)
         self.pause_action.toggled.connect(self.pauseToggled)
         menu.addSeparator()
+        menu.addAction("Transcribe audio files…").triggered.connect(self.transcribeRequested)
+        menu.addAction("Text to audio file…").triggered.connect(self.speechRequested)
         menu.addAction("History…").triggered.connect(self.historyRequested)
         menu.addAction("Settings…").triggered.connect(self.settingsRequested)
         menu.addAction(f"About {APP_NAME}…").triggered.connect(show_about)
